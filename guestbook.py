@@ -1,6 +1,9 @@
 import cStringIO
 import webapp2
 
+from google.appengine.ext import ndb
+
+
 PAGE = """\
 <!doctype html>
 <html>
@@ -14,16 +17,21 @@ PAGE = """\
 </html>
 """
 
-POSTS = []
+class Post(ndb.Model):
+    content = ndb.StringProperty()
 
 
 class MainPage(webapp2.RequestHandler):
 
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
+
+        posts_query = Post.query()
+        posts = posts_query.fetch()
+
         formatted_posts = cStringIO.StringIO()
-        for post in POSTS:
-            formatted_posts.write('    <p>{0}</p>\n'.format(post))
+        for post in posts:
+            formatted_posts.write('    <p>{0}</p>\n'.format(post.content))
         self.response.write(PAGE.format(
                 existing_posts=formatted_posts.getvalue()))
 
@@ -31,7 +39,9 @@ class MainPage(webapp2.RequestHandler):
         # Don't do this! The user's input needs to be sanitized before
         # writing it back out, otherwise, a whole host of security
         # vulnerabilities can be exploited.
-        POSTS.append(self.request.get('content'))
+        post = Post()
+        post.content = self.request.get('content')
+        post.put()
 
         self.redirect('/')
 
