@@ -1,3 +1,4 @@
+import cgi
 import cStringIO
 import webapp2
 
@@ -22,6 +23,7 @@ ENTITY_GROUP_KEY = ndb.Key('Guestbook', 'my_entity_group')
 
 class Post(ndb.Model):
     content = ndb.StringProperty()
+    timestamp = ndb.DateTimeProperty(auto_now_add=True)
 
 
 class MainPage(webapp2.RequestHandler):
@@ -29,7 +31,8 @@ class MainPage(webapp2.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
 
-        posts_query = Post.query(ancestor=ENTITY_GROUP_KEY)
+        posts_query = Post.query(
+            ancestor=ENTITY_GROUP_KEY).order(-Post.timestamp)
         posts = posts_query.fetch()
 
         formatted_posts = cStringIO.StringIO()
@@ -39,11 +42,8 @@ class MainPage(webapp2.RequestHandler):
                 existing_posts=formatted_posts.getvalue()))
 
     def post(self):
-        # Don't do this! The user's input needs to be sanitized before
-        # writing it back out, otherwise, a whole host of security
-        # vulnerabilities can be exploited.
         post = Post(parent=ENTITY_GROUP_KEY)
-        post.content = self.request.get('content')
+        post.content = cgi.escape(self.request.get('content'))
         post.put()
 
         self.redirect('/')
