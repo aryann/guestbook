@@ -28,7 +28,11 @@ class MainPage(webapp2.RequestHandler):
                 existing_posts=formatted_posts.getvalue()))
 
     def post(self):
+        # Don't do this! The user's input needs to be sanitized before
+        # writing it back out, otherwise, a whole host of security
+        # vulnerabilities can be exploited.
         POSTS.append(self.request.get('content'))
+
         self.redirect('/')
 
 
