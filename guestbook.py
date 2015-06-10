@@ -17,6 +17,9 @@ PAGE = """\
 </html>
 """
 
+ENTITY_GROUP_KEY = ndb.Key('Guestbook', 'my_entity_group')
+
+
 class Post(ndb.Model):
     content = ndb.StringProperty()
 
@@ -26,12 +29,12 @@ class MainPage(webapp2.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
 
-        posts_query = Post.query()
+        posts_query = Post.query(ancestor=ENTITY_GROUP_KEY)
         posts = posts_query.fetch()
 
         formatted_posts = cStringIO.StringIO()
         for post in posts:
-            formatted_posts.write('    <p>{0}</p>\n'.format(post.content))
+            formatted_posts.write('<p>{0}</p>\n'.format(post.content))
         self.response.write(PAGE.format(
                 existing_posts=formatted_posts.getvalue()))
 
@@ -39,7 +42,7 @@ class MainPage(webapp2.RequestHandler):
         # Don't do this! The user's input needs to be sanitized before
         # writing it back out, otherwise, a whole host of security
         # vulnerabilities can be exploited.
-        post = Post()
+        post = Post(parent=ENTITY_GROUP_KEY)
         post.content = self.request.get('content')
         post.put()
 
